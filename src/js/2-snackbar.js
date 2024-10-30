@@ -1,3 +1,5 @@
+
+
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
 
@@ -7,56 +9,53 @@ const createPromise = (delay, state) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       if (state === 'fulfilled') {
-        return resolve({
-          log: `✅ Fulfilled promise in ${delay}ms`,
-          toastMessage: `Fulfilled promise in ${delay} ms`,
-        });
+        resolve(delay);  // Передаємо лише затримку
       } else {
-        return reject({
-          log: `❌ Rejected promise in ${delay}ms`,
-          toastMessage: `Rejected promise in ${delay}ms`,
-        });
+        reject(delay);    // Передаємо лише затримку
       }
     }, delay);
   });
 };
 
-const judgePromiseResult = data => {
-  return data.includes('✅');
-};
+const notify = (delay, state) => {
+  const log = state === 'fulfilled' 
+    ? `✅ Виконана обіцянка за ${delay}ms`
+    : `❌ Відхилена обіцянка за ${delay}ms`;
 
-const notify = (log, toastMessage) => {
+  const toastMessage = state === 'fulfilled' 
+    ? `Виконана обіцянка за ${delay} ms`
+    : `Відхилена обіцянка за ${delay}ms`;
+
   console.log(log);
-  judgePromiseResult(log)
-    ? iziToast.success(
-      {
-        message: toastMessage,
-        position: 'topRight',
-      })
-    : iziToast.error(
-      {
-        message: toastMessage,
-        position: 'topRight',
-      });
+  
+  state === 'fulfilled' 
+    ? iziToast.success({ message: toastMessage, position: 'topRight' })
+    : iziToast.error({ message: toastMessage, position: 'topRight' });
 };
 
-form.addEventListener(
-  'submit',
-  function(event) {
-    event.preventDefault();
+form.addEventListener('submit', function(event) {
+  event.preventDefault();
 
-    const formData = new FormData(this);
-    const delayValue = formData.get('delay');
-    const stateValue = formData.get('state');
+  const formData = new FormData(this);
+  const delayValue = Number(formData.get('delay'));
+  const stateValue = formData.get('state');
 
-    createPromise(delayValue, stateValue)
-      .then(r => {
-        notify(r.log, r.toastMessage);
-      })
-      .catch(err => {
-        notify(err.log, err.toastMessage);
-      });
-    form.reset();
-  },
-  false,
-);
+  if (isNaN(delayValue) || delayValue < 0) {
+    iziToast.error({ message: 'Будь ласка, введіть дійсну затримку', position: 'topRight' });
+    return;
+  }
+  if (!['fulfilled', 'rejected'].includes(stateValue)) {
+    iziToast.error({ message: 'Стан повинен бути або "fulfilled", або "rejected"', position: 'topRight' });
+    return;
+  }
+
+  createPromise(delayValue, stateValue)
+    .then(() => {
+      notify(delayValue, stateValue);
+    })
+    .catch(() => {
+      notify(delayValue, stateValue);
+    });
+
+  form.reset();
+}, false);
