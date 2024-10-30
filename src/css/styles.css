@@ -37,3 +37,6 @@ body {
   line-height: 1.5;
   position: relative;
 }
+.back-link {
+  width: 60px;
+}
